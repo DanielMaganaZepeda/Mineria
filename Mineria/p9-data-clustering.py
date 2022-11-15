@@ -4,7 +4,11 @@ import matplotlib.pyplot as plt
 from typing import Tuple, Dict, List
 import numpy as np
 from functools import reduce
-from scipy.stats import mode
+
+
+def print_tabulate(df: pd.DataFrame):
+    print(tabulate(df, headers=df.columns, tablefmt="orgtbl"))
+
 
 def normalize_distribution(dist: np.array, n: int) -> np.array:
     b = dist - min(dist) + 0.000001
@@ -51,25 +55,35 @@ def scatter_group_by(
     plt.savefig(file_path)
     plt.close()
 
-
 def euclidean_distance(p_1: np.array, p_2: np.array) -> float:
     return np.sqrt(np.sum((p_2 - p_1) ** 2))
 
 
-def k_nearest_neightbors(
-    points: List[np.array], labels: np.array, input_data: List[np.array], k: int
-):
-    input_distances = [
-        [euclidean_distance(input_point, point) for point in points]
-        for input_point in input_data
-    ]
-    points_k_nearest = [
-        np.argsort(input_point_dist)[:k] for input_point_dist in input_distances
-    ]
-    return [
-        mode([labels[index] for index in point_nearest])
-        for point_nearest in points_k_nearest
-    ]
+def k_means(points: List[np.array], k: int):
+    DIM = len(points[0])
+    N = len(points)
+    num_cluster = k
+    iterations = 15
+
+    x = np.array(points)
+    y = np.random.randint(0, num_cluster, N)
+
+    mean = np.zeros((num_cluster, DIM))
+    for t in range(iterations):
+        for k in range(num_cluster):
+            mean[k] = np.mean(x[y == k], axis=0)
+        for i in range(N):
+            dist = np.sum((mean - x[i]) ** 2, axis=1)
+            pred = np.argmin(dist)
+            y[i] = pred
+
+    for kl in range(num_cluster):
+        xp = x[y == kl, 0]
+        yp = x[y == kl, 1]
+        plt.scatter(xp, yp)
+    plt.savefig("img/kmeans.png")
+    plt.close()
+    return mean
 
 
 groups = [(3, 100000, "Juegos matutinos"),(6, 100000, "Juegos vespertinos"),(9, 100000, "Juegos nocturnos")]
@@ -83,6 +97,4 @@ for hora in temp:
 
 df = pd.DataFrame({'Hora':horas, 'Asistencia':df['attendance']})
 
-scatter_group_by("C:/Users/Daniel/Mineria/Graficas/Test.png", df, "Hora", "Asistencia", "Hora")
-
-input()
+#scatter_group_by("C:/Users/Daniel/Mineria/Graficas/Clusters.png", df, "Hora", "Asistencia", "Hora")
